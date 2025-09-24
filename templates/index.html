@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Вибір Excel з Google Drive</title>
+  <script type="text/javascript" src="https://apis.google.com/js/api.js"></script>
+  <script type="text/javascript" src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
+  <script>
+    const CLIENT_ID = "377853981744-am0j3235kt7n8vgh6no8kbheshqa76n2.apps.googleusercontent.com";
+    const API_KEY = "AIzaSyDvDjkWvSy2Oq8uAfrvCE1RKE3igJmotPw";
+    const APP_ID = "377853981744";  
+    const SCOPES = "https://www.googleapis.com/auth/drive.readonly";
+
+    let tokenClient;
+    let accessToken = null;
+    let pickerApiLoaded = false;
+
+    // Завантаження Picker API
+    function onApiLoad() {
+      gapi.load("picker", { callback: onPickerApiLoad });
+    } 
+
+    function onPickerApiLoad() {
+      pickerApiLoaded = true;
+    }
+
+    // Авторизація через Google Identity Services
+    function handleAuth() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: (tokenResponse) => {
+          accessToken = tokenResponse.access_token;
+          createPicker();
+        },
+      });
+      tokenClient.requestAccessToken();
+    }
+
+    // Створення Picker
+    function createPicker() {
+      if (pickerApiLoaded && accessToken) {
+        const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS)
+          .setIncludeFolders(true)
+          .setSelectFolderEnabled(false);
+
+        const picker = new google.picker.PickerBuilder()
+          .addView(view) // показує Google Drive
+          .setOAuthToken(accessToken)
+          .setDeveloperKey(API_KEY)
+          .setAppId(APP_ID)
+          .setCallback(pickerCallback)
+          .build();
+
+        picker.setVisible(true);
+      }
+    }
+
+
+    // Callback після вибору файлу
+    function pickerCallback(data) {
+      if (data.action === google.picker.Action.PICKED) {
+        const fileId = data.docs[0].id;
+        console.log("Вибраний файл ID:", fileId);
+
+        fetch("/load_excel", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ fileId }),
+        })
+        .then(resp => resp.json())
+        .then(json => {
+          console.log("Excel дані:", json);
+          window.location.href = "/schedule";
+        })
+        .catch(err => {
+          console.error("Помилка:", err);
+          alert("Не вдалося обробити файл.");
+        });
+      }
+    }
+  </script>
+</head>
+<body onload="onApiLoad()">
+  <h2>Обери Excel з Google Drive</h2>
+  <button onclick="handleAuth()">Увійти та вибрати файл</button>
+</body>
+</html>

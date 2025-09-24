@@ -1,0 +1,242 @@
+    <!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Комплексні Пропозиції</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .container {
+            width: 600px;
+            height: auto;
+            border: 2px solid black;
+            border-radius: 10px;
+            margin: 10px auto;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        h1 {
+            text-align: center;
+            font-size: 30px;
+            color: #ff9900;
+            margin-bottom: 10px;
+        }
+        .list-item {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid #ff9900;
+            margin-right: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .line-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            margin-left: 20px;
+        }
+        .line {
+            width: 100px;   
+            height: 2px;
+            background-color: #ff9900;
+            margin: 10px 0;
+            position: relative;
+        }
+        .game-name {
+            position: absolute;
+            top: -15px;
+            white-space: nowrap;
+            margin-left: 0px;
+        }
+        .game-duration {
+            position: absolute;
+            bottom: -15px;
+            white-space: nowrap;
+            margin-left: 0px;
+        }
+        button#screenshotBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #0056b3;
+            color: #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        .button-container {
+            position: fixed;
+            top: 50px;
+            right: 15px;
+            display: flex;
+        }
+        .button-container button {
+            width: 125px; 
+            height: 30px;
+            font-size: 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            background-color: #ff9900;
+            color: #000000;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s;
+            border: 1px solid #000000;
+            margin-left: 10px;
+        }
+        .container-for-button { 
+            top: 90px;
+            right: 15px;
+            width: 390px;
+            height: auto;
+            min-height: 100px; 
+            max-height: 500px;
+            border: 1px solid black;
+            border-radius: 5px;
+            padding: 2px;
+            background-color: #fcbb5a;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        #schedule-result {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 14px;
+            overflow-y: auto;
+            border-radius: 5px;
+        }   
+        .offer-group {  
+            margin-bottom: 10px;
+            padding: 3px;
+            background-color: #f1f1f1;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="capture">
+        <h1>Розклад</h1>
+        {% for offer in schedules %}
+            <div class="list-item">
+                <div class="circle">
+                    {% if offer['end_time'] %}До {{ offer['end_time'].strftime('%H:%M') }}{% else %}Невідомо{% endif %}
+                </div>
+                {% for game, start, end, name in offer['schedule'] %}
+                    <div class="line-container">
+                        <div contenteditable="true" class="game-name">{{ name }}</div>
+                        <div class="line"></div>
+                        <div contenteditable="true" class="game-duration">{{ start.strftime('%H:%M') }} - {{ end.strftime('%H:%M') }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="button-container">
+        <button onclick="fetchSchedule('STANDART')">Standart</button>
+        <button onclick="fetchSchedule('MAXI')">Maxi</button>
+        <button onclick="fetchSchedule('MEGA')">Mega</button>
+    </div>
+    <div class="container-for-button">
+        <div id="schedule-result">
+            <p>Можливі комплексні пропозиції</p>
+        </div>
+    </div>
+    
+    <button id="screenshotBtn">Зробити фото</button>
+    
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script>
+        document.getElementById('screenshotBtn').addEventListener('click', function() {
+            const container = document.getElementById('capture');
+            container.style.height = 'auto';
+            html2canvas(container).then(function(canvas) {
+                container.style.height = '800px';
+                let link = document.createElement('a');
+                link.download = 'screenshot.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        });
+        function fetchSchedule(offerType) {
+            fetch(`/fetch_schedule/${offerType}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('schedule-result');
+                    resultDiv.innerHTML = `<h2>${offerType}</h2>`;
+                    const groupSize = getGroupSize(offerType);
+                    const groupedSchedules = groupSchedules(data, groupSize);
+                    groupedSchedules.forEach(group => {
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'offer-group';
+                        group.forEach(schedule => {
+                            groupDiv.innerHTML += `
+                                <p>
+                                    ${schedule.game}: 
+                                    ${schedule.start_time} - ${schedule.end_time}, 
+                                    ${schedule.name}
+                                </p>`;
+                        });
+                        resultDiv.appendChild(groupDiv);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching schedule:', error);
+                });
+        }
+        function getGroupSize(offerType) {
+            switch (offerType) {
+                case 'STANDART': return 3;
+                case 'MAXI': return 3;
+                case 'MEGA': return 4;
+                default: return 3;
+            }
+        }
+        function groupSchedules(data, groupSize) {
+            const grouped = [];
+            let currentGroup = [];
+            data.forEach((schedule, index) => {
+                currentGroup.push(schedule);
+                if ((index + 1) % groupSize === 0 || index === data.length - 1) {
+                    grouped.push(currentGroup);
+                    currentGroup = [];
+                }
+            });
+            return grouped;
+        }
+    </script>
+</body>
+</html>
