@@ -317,34 +317,29 @@ def rearrange_schedule(offer, new_schedule, all_schedules, start_time, C_value):
 all_schedules = []
 
 
-def read_excel_from_google_drive(file_id):
-    credentials = get_credentials_from_session()
-    if not credentials:
+def read_excel_from_drive(file_id):
+    creds = get_credentials_from_session()
+    if not creds:
         print("Не авторизовано")
         return None
 
-    drive_service = build("drive", "v3", credentials=credentials)
+    service = build('drive', 'v3', credentials=creds)
+    request = service.files().get_media(fileId=file_id)  # get_media для .xlsx
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+        if status:
+            print(f"Завантажено {int(status.progress() * 100)}%")
+    fh.seek(0)
     try:
-        # Для Google Sheets замість get_media -> export
-        request = drive_service.files().export_media(
-            fileId=file_id,
-            mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'  # Excel формат
-        )
-        fh = io.BytesIO()
-        downloader = MediaIoBaseDownload(fh, request)
-        done = False
-        while not done:
-            status, done = downloader.next_chunk()
-            if status:
-                print(f"Завантажено {int(status.progress() * 100)}%")
-        fh.seek(0)
         df = pd.read_excel(fh, engine='openpyxl')
         print("Файл успішно зчитано")
         return df
     except Exception as e:
-        print("Помилка при завантаженні або зчитуванні файлу:", e)
+        print("Помилка зчитування Excel:", e)
         return None
-
 
 from datetime import datetime, time
 
