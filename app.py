@@ -33,7 +33,8 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 # Налаштування OAuth
 CLIENT_SECRETS_FILE = "credentials.json"
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-REDIRECT_URI = 'http://localhost:5000/oauth2callback'
+REDIRECT_URI = 'https://sheldules.onrender.com/oauth2callback'
+
 
 
 @app.route('/') 
