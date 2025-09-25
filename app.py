@@ -38,7 +38,9 @@ REDIRECT_URI = 'https://sheldules.onrender.com/oauth2callback'
 
 @app.route('/') 
 #---Головна сторінка з посиланням на авторизацію через Google---(1p)
-def index():    
+def index():
+    if "credentials" not in session:
+        return redirect('/authorize')
     return render_template('Logo.html')
 
 
