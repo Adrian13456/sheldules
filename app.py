@@ -325,38 +325,38 @@ def read_excel_from_drive(file_id):
 
     service = build('drive', 'v3', credentials=creds)
 
-    # Отримуємо інформацію про файл
-    file = service.files().get(fileId=file_id, fields="id, name, mimeType").execute()
-    mime_type = file.get("mimeType")
-    print(f"Файл: {file['name']}, тип: {mime_type}")
+    # Дізнаємось MIME тип файлу
+    file_metadata = service.files().get(fileId=file_id, fields="mimeType, name").execute()
+    mime_type = file_metadata.get("mimeType")
+    file_name = file_metadata.get("name")
+    print(f"Завантажую {file_name} ({mime_type})")
 
     fh = io.BytesIO()
 
+    if mime_type == "application/vnd.google-apps.spreadsheet":
+        # Це Google Sheets → експортуємо як Excel
+        request = service.files().export_media(
+            fileId=file_id,
+            mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        # Це звичайний Excel (.xlsx / .xls)
+        request = service.files().get_media(fileId=file_id)
+
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+        if status:
+            print(f"Завантажено {int(status.progress() * 100)}%")
+
+    fh.seek(0)
     try:
-        if mime_type == "application/vnd.google-apps.spreadsheet":
-            # Це Google Sheets → експортуємо у .xlsx
-            request = service.files().export_media(
-                fileId=file_id,
-                mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            fh = io.BytesIO(request.execute())
-        else:
-            # Це Excel або інший файл → завантажуємо напряму
-            request = service.files().get_media(fileId=file_id)
-            downloader = MediaIoBaseDownload(fh, request)
-            done = False
-            while not done:
-                status, done = downloader.next_chunk()
-                if status:
-                    print(f"Завантажено {int(status.progress() * 100)}%")
-
-        fh.seek(0)
         df = pd.read_excel(fh, engine="openpyxl")
-        print("Файл успішно зчитано ✅")
+        print("Файл успішно зчитано")
         return df
-
     except Exception as e:
-        print("Помилка при зчитуванні:", e)
+        print("Помилка зчитування Excel:", e)
         return None
 import traceback
 from datetime import datetime, time
