@@ -36,7 +36,6 @@ SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 REDIRECT_URI = 'https://sheldules.onrender.com/oauth2callback'
 
 
-
 @app.route('/') 
 #---Головна сторінка з посиланням на авторизацію через Google---(1p)
 def index():    
