@@ -324,21 +324,27 @@ def read_excel_from_drive(file_id):
         return None
 
     service = build('drive', 'v3', credentials=creds)
-    request = service.files().get_media(fileId=file_id)  # get_media для .xlsx
-    fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
-    while not done:
-        status, done = downloader.next_chunk()
-        if status:
-            print(f"Завантажено {int(status.progress() * 100)}%")
-    fh.seek(0)
+    
     try:
+        # Export Google Sheet у Excel (.xlsx)
+        request = service.files().export_media(
+            fileId=file_id,
+            mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+            if status:
+                print(f"Завантажено {int(status.progress() * 100)}%")
+        fh.seek(0)
+        # Читаємо у pandas
         df = pd.read_excel(fh, engine='openpyxl')
-        print("Файл успішно зчитано")
+        print("Google Sheet успішно зчитано")
         return df
     except Exception as e:
-        print("Помилка зчитування Excel:", e)
+        print("Помилка зчитування Google Sheet:", e)
         return None
 
 from datetime import datetime, time
