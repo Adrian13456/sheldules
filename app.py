@@ -369,7 +369,7 @@ def schedule():
     if not file_id:
         return "Помилка: не вказаний file_id", 400
 
-    df = read_excel_from_google_drive(file_id)
+    df = read_excel_from_drive(file_id)
     if df is None:
         return "Помилка: не вдалося зчитати Excel з Google Drive", 400
 
