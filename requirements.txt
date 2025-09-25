@@ -19,7 +19,7 @@ Jinja2==3.1.6
 MarkupSafe==3.0.2
 numpy==2.3.3
 oauthlib==3.3.1
-openpyxl==3.1.2
+openpyxl
 pandas==2.3.2
 proto-plus==1.26.1
 protobuf==6.32.1
@@ -36,4 +36,5 @@ tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.5.0
 Werkzeug==3.1.3
+
 
