@@ -41,7 +41,7 @@ def index():
 @app.route('/authorize')
 def authorize():
     flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,
+        CLIENT_SECRETS_DICT,   # <-- тут словник, а не шлях до файлу
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
@@ -53,25 +53,21 @@ def authorize():
     return redirect(auth_url)
 
 
-
 @app.route('/oauth2callback')
-#---"""Обробка повернення з Google OAuth2 та збереження облікових даних у сесію"""---(2.1p)
 def oauth2callback():
     if 'state' not in session:
-        return redirect('/authorize')  # або вивести повідомлення про помилку
-    
+        return redirect('/authorize')
+
     state = session['state']
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
+    flow = Flow.from_client_config(
+        CLIENT_SECRETS_DICT,  # <-- заміна
         scopes=SCOPES,
         state=state,
         redirect_uri=REDIRECT_URI
     )
     flow.fetch_token(authorization_response=request.url)
-
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
-
     return redirect('/list_files')
 
 
