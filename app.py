@@ -42,7 +42,7 @@ def index():
 @app.route('/authorize')
 def authorize():
     flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,  # <-- словник, а не шлях до файлу
+        CLIENT_SECRETS_DICT,  # <-- словник, а не файл
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
@@ -53,17 +53,19 @@ def authorize():
     session['state'] = state
     return redirect(auth_url)
 
+
 @app.route('/oauth2callback')
 def oauth2callback():
     if 'state' not in session:
         return redirect('/authorize')
     state = session['state']
     flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,  # <-- теж заміна
+        CLIENT_SECRETS_DICT,
         scopes=SCOPES,
         state=state,
         redirect_uri=REDIRECT_URI
     )
+
     flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
