@@ -66,6 +66,20 @@
             background-color: #ffd633;
             transform: scale(1.05);
         }
+        button#sheldule {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -81,7 +95,7 @@
             </li>
             {% endfor %}
         </ul>
-        <button type="submit">Побудувати розклад</button>
+        <button id="sheldule" type="submit">Побудувати розклад</button>
     </form>
 </body>
 </html>
