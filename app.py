@@ -10,6 +10,7 @@ import os
 import googleapiclient.discovery
 import google.oauth2.credentials
 import pandas as pd
+import json
 
 app = Flask(__name__)
 # Комплексні пропозиції
@@ -20,12 +21,23 @@ COMPLEX_OFFERS = {
     "MEGA": [("Arena", 60, "ArenaText"), ("Kvest", 60, "KvestText"), ("ArenaActor", 30, "ArenaAText"), ("LL", 60, "LLText")],
 }   
 
+CREDENTIALS_FILE = "credentials.json"
 
 if "GOOGLE_CREDENTIALS" in os.environ:
-    with open("credentials.json", "w", encoding="utf-8") as f:
-        f.write(os.environ["GOOGLE_CREDENTIALS"])
+    try:
+        # спробуємо розпарсити як JSON
+        creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+        with open(CREDENTIALS_FILE, "w", encoding="utf-8") as f:
+            json.dump(creds_dict, f, ensure_ascii=False, indent=2)
+        print("✅ credentials.json створено з Environment Variables")
+    except Exception as e:
+        print("❌ Помилка при обробці GOOGLE_CREDENTIALS:", e)
+elif os.path.exists(CREDENTIALS_FILE):
+    print("✅ Використовується локальний credentials.json")
 else:
-    print("Увага! Environment Variable CREDENTIALS_JSON не знайдено")
+    raise FileNotFoundError("❌ Не знайдено credentials.json і немає GOOGLE_CREDENTIALS")
+
+
     
 app.secret_key = "my_super_secret_key_123"  # постійний, а не random
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
