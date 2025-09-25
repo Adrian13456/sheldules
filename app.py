@@ -10,6 +10,7 @@ import os
 import googleapiclient.discovery
 import google.oauth2.credentials
 import pandas as pd
+import json
 
 app = Flask(__name__)
 # Комплексні пропозиції
@@ -24,7 +25,9 @@ app.secret_key = "my_super_secret_key_123"  # постійний, а не random
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Налаштування OAuth
-CLIENT_SECRETS_FILE = "credentials.json"
+CLIENT_SECRETS_JSON = os.environ.get("GOOGLE_CREDENTIALS")
+CLIENT_SECRETS_DICT = json.loads(CLIENT_SECRETS_JSON)
+
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 REDIRECT_URI = 'http://localhost:5000/oauth2callback'
 
@@ -36,10 +39,9 @@ def index():
 
 
 @app.route('/authorize')
-#---Ініціалізація процесу авторизації Google OAuth2---(2p)
 def authorize():
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
+    flow = Flow.from_client_config(
+        CLIENT_SECRETS_DICT,
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
@@ -49,6 +51,7 @@ def authorize():
     )
     session['state'] = state
     return redirect(auth_url)
+
 
 
 @app.route('/oauth2callback')
