@@ -25,6 +25,7 @@ app.secret_key = "my_super_secret_key_123"  # постійний, а не random
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Налаштування OAuth
+# Зчитування секрету з Render
 CLIENT_SECRETS_JSON = os.environ.get("GOOGLE_CREDENTIALS")
 CLIENT_SECRETS_DICT = json.loads(CLIENT_SECRETS_JSON)
 
@@ -41,7 +42,7 @@ def index():
 @app.route('/authorize')
 def authorize():
     flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,   # <-- тут словник, а не шлях до файлу
+        CLIENT_SECRETS_DICT,  # <-- словник, а не шлях до файлу
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
@@ -52,15 +53,13 @@ def authorize():
     session['state'] = state
     return redirect(auth_url)
 
-
 @app.route('/oauth2callback')
 def oauth2callback():
     if 'state' not in session:
         return redirect('/authorize')
-
     state = session['state']
     flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,  # <-- заміна
+        CLIENT_SECRETS_DICT,  # <-- теж заміна
         scopes=SCOPES,
         state=state,
         redirect_uri=REDIRECT_URI
@@ -69,7 +68,6 @@ def oauth2callback():
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
     return redirect('/list_files')
-
 
 @app.route("/list_files", methods=["GET", "POST"])
 def list_files():
