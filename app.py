@@ -324,21 +324,39 @@ def read_excel_from_drive(file_id):
         return None
 
     service = build('drive', 'v3', credentials=creds)
-    request = service.files().get_media(fileId=file_id)  # для .xlsx
+
+    # Отримуємо інформацію про файл
+    file = service.files().get(fileId=file_id, fields="id, name, mimeType").execute()
+    mime_type = file.get("mimeType")
+    print(f"Файл: {file['name']}, тип: {mime_type}")
+
     fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
-    while not done:
-        status, done = downloader.next_chunk()
-        if status:
-            print(f"Завантажено {int(status.progress() * 100)}%")
-    fh.seek(0)
+
     try:
-        df = pd.read_excel(fh, engine='openpyxl')
-        print("Excel успішно зчитано")
+        if mime_type == "application/vnd.google-apps.spreadsheet":
+            # Це Google Sheets → експортуємо у .xlsx
+            request = service.files().export_media(
+                fileId=file_id,
+                mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            fh = io.BytesIO(request.execute())
+        else:
+            # Це Excel або інший файл → завантажуємо напряму
+            request = service.files().get_media(fileId=file_id)
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+                if status:
+                    print(f"Завантажено {int(status.progress() * 100)}%")
+
+        fh.seek(0)
+        df = pd.read_excel(fh, engine="openpyxl")
+        print("Файл успішно зчитано ✅")
         return df
+
     except Exception as e:
-        print("Помилка зчитування Excel:", e)
+        print("Помилка при зчитуванні:", e)
         return None
 import traceback
 from datetime import datetime, time
