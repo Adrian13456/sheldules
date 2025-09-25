@@ -10,7 +10,6 @@ import os
 import googleapiclient.discovery
 import google.oauth2.credentials
 import pandas as pd
-import json
 
 app = Flask(__name__)
 # Комплексні пропозиції
@@ -21,14 +20,18 @@ COMPLEX_OFFERS = {
     "MEGA": [("Arena", 60, "ArenaText"), ("Kvest", 60, "KvestText"), ("ArenaActor", 30, "ArenaAText"), ("LL", 60, "LLText")],
 }   
 
+
+if "GOOGLE_CREDENTIALS" in os.environ:
+    with open("credentials.json", "w", encoding="utf-8") as f:
+        f.write(os.environ["GOOGLE_CREDENTIALS"])
+else:
+    print("Увага! Environment Variable CREDENTIALS_JSON не знайдено")
+    
 app.secret_key = "my_super_secret_key_123"  # постійний, а не random
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Налаштування OAuth
-# Зчитування секрету з Render
-CLIENT_SECRETS_JSON = os.environ.get("GOOGLE_CREDENTIALS")
-CLIENT_SECRETS_DICT = json.loads(CLIENT_SECRETS_JSON)
-
+CLIENT_SECRETS_FILE = "credentials.json"
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 REDIRECT_URI = 'http://localhost:5000/oauth2callback'
 
@@ -40,9 +43,10 @@ def index():
 
 
 @app.route('/authorize')
+#---Ініціалізація процесу авторизації Google OAuth2---(2p)
 def authorize():
-    flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,  # <-- словник, а не файл
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
         scopes=SCOPES,
         redirect_uri=REDIRECT_URI
     )
@@ -55,21 +59,25 @@ def authorize():
 
 
 @app.route('/oauth2callback')
+#---"""Обробка повернення з Google OAuth2 та збереження облікових даних у сесію"""---(2.1p)
 def oauth2callback():
     if 'state' not in session:
-        return redirect('/authorize')
+        return redirect('/authorize')  # або вивести повідомлення про помилку
+    
     state = session['state']
-    flow = Flow.from_client_config(
-        CLIENT_SECRETS_DICT,
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
         scopes=SCOPES,
         state=state,
         redirect_uri=REDIRECT_URI
     )
-
     flow.fetch_token(authorization_response=request.url)
+
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
+
     return redirect('/list_files')
+
 
 @app.route("/list_files", methods=["GET", "POST"])
 def list_files():
